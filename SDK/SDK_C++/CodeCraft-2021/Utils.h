@@ -5,12 +5,13 @@
 #include <vector>
 #include <fstream>
 #include <iterator>
+#include <iostream>
 
 #define TEST
 // #define LOG
 
 #ifdef TEST
-const std::string train_data = "../../../training-data/training-2.txt";
+const std::string train_data = "../../../training-data/training-1.txt";
 const std::string test_output = "test_output.txt";
 #endif
 

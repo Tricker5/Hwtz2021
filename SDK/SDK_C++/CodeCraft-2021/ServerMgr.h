@@ -35,12 +35,15 @@ struct ServerMgr{
         // int day_cost;
         std::vector<ServerAlloc> serv_alloc_list;
         std::unordered_map<int, VMAlloc> vm_alloc_map;
+        DataInput* data_input;
+        DataOutput* data_output;
 
-        ServerMgr(const DataInput& data_input, DataOutput& data_output);
-        void processReq(const DataInput& data_input, DataOutput& data_output);
-        void purchaseServer(const DataInput& DataInput, DataOutput& data_output);
-        bool preAllocVM(const Request& req, VM vm,  DataOutput& data_output);
-        void postAllocVM(const Request& req, VM vm, DataOutput& data_output);
-        void delAllocVM(const Request& req, VM vm, DataOutput& data_output);
+        ServerMgr(DataInput& data_input, DataOutput& data_output);
+        ~ServerMgr();
+        void processReq();
+        void purchaseServer();
+        bool preAllocVM(const Request& req);
+        void postAllocVM(const Request& req);
+        void delAllocVM(const Request& req);
         void migAllocVM();
 };

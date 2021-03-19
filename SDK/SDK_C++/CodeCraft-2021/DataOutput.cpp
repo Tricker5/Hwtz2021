@@ -3,20 +3,16 @@
 DataOutput::DataOutput(){
     day_cost = 0;
     total_cost = 0;
-#ifdef TEST
+    day_migration = 0;
     output_data.open(test_output);
-#endif
 }
 
 DataOutput::~DataOutput(){
-#ifdef TEST
     output_data.close();
-#endif 
 }
 
 
 
-#ifdef TEST
 void DataOutput::printDayOutput(){
     printDayPurchaseNum();
     printDayPurchaseInfo();
@@ -52,6 +48,7 @@ void DataOutput::printDayAllocInfo(){
     }
 }
 
+#ifdef TEST
 void DataOutput::printTotalCost(){
     output_data << std::endl << std::endl << "Total cost: " << total_cost << std::endl;
 }
