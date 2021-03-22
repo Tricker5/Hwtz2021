@@ -228,7 +228,7 @@ void ServerMgr::purchaseServer(){
     const Server& serv = data_input->server_map.at(data_input->max_type); // 找到所要购买的型号
     ServerAlloc serv_alloc(serv.type, serv.cpu_a, serv.cpu_b, serv.memory_a, serv.memory_b, serv.run_cost, false);
     serv_alloc_list.push_back(serv_alloc);
-    ++data_output->purchase_num_list.back(); // 对当天购买服务器总量计数
+    data_output->purchase_num_list.back() = 1; // 对当天购买服务器总量计数
     data_output->total_cost += serv.purchase_cost; // 成本增加
     ++data_output->purchase_list.back()[serv.type]; // 对当天购买的特定服务器进行计数
 }
