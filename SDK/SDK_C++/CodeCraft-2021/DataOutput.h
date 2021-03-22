@@ -22,5 +22,7 @@ struct DataOutput{
         void printDayMigNum();
         void printDayMigInfo();
         void printDayAllocInfo();
+#ifdef TEST
         void printTotalCost();
+#endif
 };

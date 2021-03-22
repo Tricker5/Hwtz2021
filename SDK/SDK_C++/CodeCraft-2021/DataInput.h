@@ -19,18 +19,9 @@ struct DataInput{
 
         DataInput();
         ~DataInput();
-// #ifdef TEST
-//         int readConst(std::ifstream& input_data);
-//         void readServer(std::ifstream& input_data, std::unordered_map<std::string, Server>& server_map);
-//         void readVM(std::ifstream& input_data, std::unordered_map<std::string, VM>& vm_map);
-//         void readRequest(std::ifstream& input_data, std::vector<int>& reqnum_list, std::vector<std::vector<Request>>& request_list);
-// #endif
-
-// #ifndef TEST
         int readConst();
         void readServer(std::unordered_map<std::string, Server>& server_map);
         void readVM(std::unordered_map<std::string, VM>& vm_map);
         void readRequest(std::vector<int>& reqnum_list, std::vector<std::vector<Request>>& request_list);
-// #endif
 };
     

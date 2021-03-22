@@ -30,7 +30,9 @@ ServerMgr::ServerMgr(DataInput& data_input, DataOutput& data_output){
     this->data_input = &data_input;
     this->data_output = &data_output;
     processReq();
+#ifdef TEST
     data_output.printTotalCost();
+#endif
 }
 
 ServerMgr::~ServerMgr(){

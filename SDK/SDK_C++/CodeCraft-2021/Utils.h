@@ -7,7 +7,7 @@
 #include <iterator>
 #include <iostream>
 
-#define TEST
+// #define TEST
 // #define LOG
 
 #ifdef TEST
