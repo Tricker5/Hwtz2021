@@ -41,7 +41,7 @@ struct ServerMgr{
         ServerMgr(DataInput& data_input, DataOutput& data_output);
         ~ServerMgr();
         void processReq();
-        void purchaseServer();
+        void purchaseServer(const Request& req);
         bool preAllocVM(const Request& req);
         void postAllocVM(const Request& req);
         void delAllocVM(const Request& req);

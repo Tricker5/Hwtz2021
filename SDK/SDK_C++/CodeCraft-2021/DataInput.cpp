@@ -6,11 +6,11 @@ DataInput::DataInput(){
     input_f = std::freopen(train_data.c_str(), "r", stdin);
 #endif
     server_num = readConst();
-    readServer(server_map);
+    readServer();
     vm_num = readConst();
-    readVM(vm_map);
+    readVM();
     day_num = readConst();
-    readRequest(reqnum_list, request_list);
+    readRequest();
 }
 
 DataInput::~DataInput(){
@@ -25,7 +25,7 @@ int DataInput::readConst(){
     return stoi(str_const);
 }
 
-void DataInput::readServer(std::unordered_map<std::string, Server>& server_map){
+void DataInput::readServer(){
     std::string str_server;
     for(int count = 0; count < server_num; ++count){
         getline(std::cin, str_server);
@@ -39,15 +39,16 @@ void DataInput::readServer(std::unordered_map<std::string, Server>& server_map){
         s.purchase_cost = stoi(str_vec[3]);
         s.run_cost = stoi(str_vec[4]);
         server_map.emplace(s.type, s);
-        // 找到最贵的服务器
-        if(max_cost < s.purchase_cost){
-            max_cost = s.purchase_cost;
-            max_type = s.type;
-        }
+        server_list.push_back(s.type);
+        // // 找到最贵的服务器
+        // if(max_cost < s.purchase_cost){
+        //     max_cost = s.purchase_cost;
+        //     max_type = s.type;
+        // }
     }
 }
 
-void DataInput::readVM(std::unordered_map<std::string, VM>& vm_map){
+void DataInput::readVM(){
     std::string str_vm;
     for(int count = 0; count < vm_num; ++count){
         getline(std::cin, str_vm);
@@ -61,7 +62,7 @@ void DataInput::readVM(std::unordered_map<std::string, VM>& vm_map){
     }
 }
 
-void DataInput::readRequest(std::vector<int>& reqnum_list, std::vector<std::vector<Request>>& request_list){
+void DataInput::readRequest(){
     std::string str_req;
     for(int count_day = 0, request_num = 0; count_day < day_num; ++count_day){
         request_num = readConst();

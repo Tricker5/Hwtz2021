@@ -26,7 +26,7 @@ void DataOutput::printDayOutput(){
 }
 
 void DataOutput::printDayPurchaseNum(){
-    std::cout << "(purchase, " << purchase_num_list.back() << ")" << std::endl;;
+    std::cout << "(purchase, " << purchase_list.back().size() << ")" << std::endl;;
 }
 
 void DataOutput::printDayPurchaseInfo(){

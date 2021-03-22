@@ -48,8 +48,6 @@ ServerMgr::~ServerMgr(){
  */
 void ServerMgr::processReq(){
     for(const auto day_req : data_input->request_list){
-        // 记录当天的购买数量
-        data_output->purchase_num_list.push_back(0);
         // 记录当天的购买信息
         std::unordered_map<std::string, int> day_purchase;
         data_output->purchase_list.push_back(day_purchase);
@@ -60,7 +58,7 @@ void ServerMgr::processReq(){
         for(const Request req : day_req){
             if(req.op == ADD){
                 if(!preAllocVM(req)){
-                    purchaseServer();
+                    purchaseServer(req);
                     postAllocVM(req);
                 }
             }else{
@@ -87,10 +85,10 @@ bool ServerMgr::preAllocVM(const Request& req){
     const VM& vm = data_input->vm_map.at(req.vm_type);
     if(vm.is_dual){
         for(auto& serv_alloc : serv_alloc_list){
-            if(serv_alloc.c_a_remain >= vm.cpu / 2 &&
-                serv_alloc.c_b_remain >= vm.cpu / 2 &&
-                serv_alloc.m_a_remain >= vm.memory / 2 &&
-                serv_alloc.m_b_remain >= vm.memory / 2){
+            if(serv_alloc.c_a_remain > vm.cpu / 2 &&
+                serv_alloc.c_b_remain > vm.cpu / 2 &&
+                serv_alloc.m_a_remain > vm.memory / 2 &&
+                serv_alloc.m_b_remain > vm.memory / 2){
                     VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 0);
                     vm_alloc_map.emplace(req.vm_id, vm_alloc);
                     serv_alloc.c_a_remain -= vm.cpu / 2;
@@ -110,7 +108,7 @@ bool ServerMgr::preAllocVM(const Request& req){
         }
     }else{
         for(auto& serv_alloc : serv_alloc_list){
-            if(serv_alloc.c_a_remain >= vm.cpu && serv_alloc.m_a_remain >= vm.memory){
+            if(serv_alloc.c_a_remain > vm.cpu && serv_alloc.m_a_remain > vm.memory){
                 VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 1);
                 vm_alloc_map.emplace(req.vm_id, vm_alloc);
                 serv_alloc.c_a_remain -= vm.cpu ;
@@ -123,7 +121,7 @@ bool ServerMgr::preAllocVM(const Request& req){
                 // 记录分配信息
                 data_output->alloc_list.back().push_back(std::make_pair(count, "A"));
                 return true;
-            }else if(serv_alloc.c_b_remain >= vm.cpu && serv_alloc.m_b_remain >= vm.memory){
+            }else if(serv_alloc.c_b_remain > vm.cpu && serv_alloc.m_b_remain > vm.memory){
                 VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 2);
                 vm_alloc_map.emplace(req.vm_id, vm_alloc);
                 serv_alloc.c_b_remain -= vm.cpu ;
@@ -220,15 +218,29 @@ void ServerMgr::migAllocVM(){
 
 /**
  * @brief 
- * 不买最对，只买最贵
+ * 薛定谔算法
  * @param data_input 
  * @param data_output 
  */
-void ServerMgr::purchaseServer(){
-    const Server& serv = data_input->server_map.at(data_input->max_type); // 找到所要购买的型号
+void ServerMgr::purchaseServer(const Request& req){
+    Server serv;
+    const VM& vm = data_input->vm_map.at(req.vm_type);
+    srand(unsigned(time(0)));
+    // int count = 0;
+    while(true){
+        // ++count;
+        serv = data_input->server_map.at(data_input->server_list.at(rand() % data_input->server_num));
+        if(vm.is_dual){
+            if(serv.cpu_a > vm.cpu / 2 && serv.memory_a > vm.memory / 2)
+                break;
+        }else{
+            if(serv.cpu_a > vm.cpu && serv.memory_a > vm.memory)
+                break;
+        }
+    }
+    // std::cout << count << std::endl;
     ServerAlloc serv_alloc(serv.type, serv.cpu_a, serv.cpu_b, serv.memory_a, serv.memory_b, serv.run_cost, false);
     serv_alloc_list.push_back(serv_alloc);
-    data_output->purchase_num_list.back() = 1; // 对当天购买服务器总量计数
     data_output->total_cost += serv.purchase_cost; // 成本增加
     ++data_output->purchase_list.back()[serv.type]; // 对当天购买的特定服务器进行计数
 }
