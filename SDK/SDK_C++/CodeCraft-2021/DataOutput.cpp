@@ -1,14 +1,18 @@
 #include "DataOutput.h"
 
 DataOutput::DataOutput(){
+#ifdef TEST
+    output_f = freopen(test_output.c_str(), "w", stdout);
+#endif
     day_cost = 0;
     total_cost = 0;
     day_migration = 0;
-    output_data.open(test_output);
 }
 
 DataOutput::~DataOutput(){
-    output_data.close();
+#ifdef TEST
+    fclose(output_f);
+#endif
 }
 
 
@@ -22,17 +26,17 @@ void DataOutput::printDayOutput(){
 }
 
 void DataOutput::printDayPurchaseNum(){
-    output_data << "(purchase, " << purchase_num_list.back() << ")" << std::endl;;
+    std::cout << "(purchase, " << purchase_num_list.back() << ")" << std::endl;;
 }
 
 void DataOutput::printDayPurchaseInfo(){
     for(auto item : purchase_list.back()){
-        output_data << "(" << item.first << ", " << item.second << ")" << std::endl;
+        std::cout << "(" << item.first << ", " << item.second << ")" << std::endl;
     }
 }
 
 void DataOutput::printDayMigNum(){
-    output_data << "(migration, 0)" << std::endl;
+    std::cout << "(migration, 0)" << std::endl;
 }
 
 void DataOutput::printDayMigInfo(){
@@ -42,14 +46,14 @@ void DataOutput::printDayMigInfo(){
 void DataOutput::printDayAllocInfo(){
     for(auto item : alloc_list.back()){
         if(item.second.empty())
-            output_data << "(" << item.first << ")" << std::endl;
+            std::cout << "(" << item.first << ")" << std::endl;
         else
-            output_data << "(" << item.first << ", " << item.second << ")" << std::endl;
+            std::cout << "(" << item.first << ", " << item.second << ")" << std::endl;
     }
 }
 
 #ifdef TEST
 void DataOutput::printTotalCost(){
-    output_data << std::endl << std::endl << "Total cost: " << total_cost << std::endl;
+    std::cout << std::endl << std::endl << "Total cost: " << total_cost << std::endl;
 }
 #endif

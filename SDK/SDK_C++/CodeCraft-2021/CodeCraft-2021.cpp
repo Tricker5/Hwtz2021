@@ -13,6 +13,7 @@ int main()
 	DataInput data_input;
 	DataOutput data_output;
 	ServerMgr server_mgr(data_input, data_output);
+	fflush(stdout);
 
 #ifdef LOG
 	std::cout << data_input.server_num << std::endl;
