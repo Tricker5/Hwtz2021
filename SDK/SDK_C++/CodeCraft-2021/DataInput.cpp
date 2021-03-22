@@ -39,12 +39,17 @@ void DataInput::readServer(){
         s.purchase_cost = stoi(str_vec[3]);
         s.run_cost = stoi(str_vec[4]);
         server_map.emplace(s.type, s);
-        server_list.push_back(s.type);
+        sort_server_map.emplace(s.purchase_cost, s.type);
+        // server_list.push_back(s.type);
         // // 找到最贵的服务器
         // if(max_cost < s.purchase_cost){
         //     max_cost = s.purchase_cost;
         //     max_type = s.type;
         // }
+    }
+    for(const auto& item : sort_server_map){
+        server_list.push_back(item.second);
+        // std::cout << item.first << " " << item.second << std::endl;
     }
 }
 

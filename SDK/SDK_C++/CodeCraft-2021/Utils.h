@@ -6,8 +6,9 @@
 #include <fstream>
 #include <iterator>
 #include <iostream>
+#include <map>
 
-// #define TEST
+#define TEST
 // #define LOG
 
 #ifdef TEST

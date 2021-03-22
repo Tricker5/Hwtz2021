@@ -15,6 +15,7 @@ struct DataInput{
         std::vector<int> reqnum_list; 
         std::unordered_map<std::string, Server> server_map;
         std::vector<std::string> server_list; // 用于随缘选服务器
+        std::map<int, std::string, std::greater<int>> sort_server_map; // 排序好成本的服务器
         std::unordered_map<std::string, VM> vm_map;
         std::vector<std::vector<Request>> request_list;
 

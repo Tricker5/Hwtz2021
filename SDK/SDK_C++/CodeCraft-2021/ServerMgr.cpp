@@ -229,7 +229,7 @@ void ServerMgr::purchaseServer(const Request& req){
     // int count = 0;
     while(true){
         // ++count;
-        serv = data_input->server_map.at(data_input->server_list.at(rand() % data_input->server_num));
+        serv = data_input->server_map.at(data_input->server_list.at(rand() % (data_input->server_num / 2)));
         if(vm.is_dual){
             if(serv.cpu_a > vm.cpu / 2 && serv.memory_a > vm.memory / 2)
                 break;
