@@ -32,18 +32,21 @@ struct VMAlloc{
 
 struct ServerMgr{
     public:
-        // int day_cost;
+        // N天的分配情况;
         std::vector<ServerAlloc> serv_alloc_list;
         std::unordered_map<int, VMAlloc> vm_alloc_map;
+        // 备份N-1天的分配情况
+        std::vector<ServerAlloc> serv_alloc_list_temp;
+        std::unordered_map<int, VMAlloc> vm_alloc_map_temp;
         DataInput* data_input;
         DataOutput* data_output;
 
         ServerMgr(DataInput& data_input, DataOutput& data_output);
         ~ServerMgr();
         void processReq();
-        void purchaseServer(const Request& req);
-        bool preAllocVM(const Request& req);
-        void postAllocVM(const Request& req);
-        void delAllocVM(const Request& req);
+        bool purchaseServer(const Request& req, int serv_index, bool is_min_cost);
+        bool preAllocVM(const Request& req, bool is_min_cost);
+        void postAllocVM(const Request& req, bool is_min_cost);
+        void delAllocVM(const Request& req, bool is_min_cost);
         void migAllocVM();
 };

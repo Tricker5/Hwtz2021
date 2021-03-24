@@ -5,7 +5,11 @@
 struct DataInput{
     public:
 #ifdef TEST
+#ifdef VSDEBUG
+        std::ifstream input_f;
+#else
         FILE* input_f;
+#endif
 #endif
         int server_num;
         int vm_num;

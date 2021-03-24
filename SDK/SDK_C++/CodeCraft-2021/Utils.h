@@ -9,11 +9,17 @@
 #include <map>
 
 #define TEST
+// #define VSDEBUG
 // #define LOG
 
 #ifdef TEST
+#ifdef VSDEBUG
+const std::string train_data = "D:\\Code\\CodeCraft-2021\\training-2.txt";
+const std::string test_output = "D:\\Code\\CodeCraft-2021\\test_output.txt";
+#else
 const std::string train_data = "../../../training-data/training-1.txt";
 const std::string test_output = "test_output.txt";
+#endif
 #endif
 
 enum Operation{
