@@ -23,7 +23,33 @@ DataOutput::~DataOutput(){
 #endif
 }
 
+void DataOutput::addNewDayPurchase(){
+    std::unordered_map<std::string, int> day_purchase;
+    purchase_list.push_back(day_purchase);
+}
 
+void DataOutput::addNewDayAlloc(){
+    std::vector<std::pair<int, int>> day_alloc;
+    alloc_list.push_back(day_alloc);
+}
+
+void DataOutput::backup(){
+    purchase_list_temp = purchase_list;
+    alloc_list_temp = alloc_list;
+    day_cost_temp = day_cost;
+    total_cost_temp = total_cost;
+    energy_cost_temp = energy_cost;
+    hardware_cost_temp = hardware_cost;
+}
+
+void DataOutput::recover(){
+    purchase_list = purchase_list_temp;
+    alloc_list = alloc_list_temp;
+    day_cost = day_cost_temp;
+    total_cost = total_cost_temp;
+    energy_cost = energy_cost_temp;
+    hardware_cost = hardware_cost_temp;
+}
 
 void DataOutput::printDayOutput(){
     printDayPurchaseNum();
@@ -67,31 +93,27 @@ void DataOutput::printDayMigInfo(){
 }
 
 void DataOutput::printDayAllocInfo(){
+    std::string node_type_list[] = {"", ", A", ", B"};
     for(auto item : alloc_list.back()){
-        if(item.second.empty())
 #ifdef VSDEBUG
             output_f
 #else
             std::cout 
 #endif
-                << "(" << item.first << ")" << std::endl;
-        else
-#ifdef VSDEBUG
-            output_f
-#else
-            std::cout 
-#endif
-                 << "(" << item.first << ", " << item.second << ")" << std::endl;
+                 << "(" << item.first << node_type_list[item.second] << ")" << std::endl;
     }
 }
 
 #ifdef TEST
 void DataOutput::printTotalCost(){
+    total_cost = energy_cost + hardware_cost;
 #ifdef VSDEBUG
     output_f
 #else
     std::cout 
 #endif
-        << std::endl << std::endl << "Total cost: " << total_cost << std::endl;
+        << std::endl << std::endl << "Total cost: " << total_cost << std::endl << 
+            "Hardware cost: " << hardware_cost << std::endl <<
+            "Energy cost: " << energy_cost << std::endl;
 }
 #endif

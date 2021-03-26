@@ -46,26 +46,13 @@ void DataInput::readServer(){
         getline(std::cin, str_server);
 #endif
         std::vector<std::string> str_vec = split(str_server); 
-        Server s;
-        s.type = str_vec[0];
-        s.cpu_a = stoi(str_vec[1]) / 2;
-        s.cpu_b = s.cpu_a;
-        s.memory_a = stoi(str_vec[2]) / 2;
-        s.memory_b = s.memory_a;
-        s.purchase_cost = stoi(str_vec[3]);
-        s.run_cost = stoi(str_vec[4]);
+        Server s(str_vec[0], stoi(str_vec[1]) / 2, stoi(str_vec[2]) / 2, stoi(str_vec[3]), stoi(str_vec[4]));
         server_map.emplace(s.type, s);
+        // 利用map对服务器成本进行排序
         sort_server_map.emplace(s.purchase_cost, s.type);
-        // server_list.push_back(s.type);
-        // // 找到最贵的服务器
-        // if(max_cost < s.purchase_cost){
-        //     max_cost = s.purchase_cost;
-        //     max_type = s.type;
-        // }
     }
     for(const auto& item : sort_server_map){
         server_list.push_back(item.second);
-        // std::cout << item.first << " " << item.second << std::endl;
     }
 }
 
@@ -78,11 +65,7 @@ void DataInput::readVM(){
         getline(std::cin, str_vm);
 #endif
         std::vector<std::string> str_vec = split(str_vm);
-        VM vm;
-        vm.type = str_vec[0];
-        vm.cpu = stoi(str_vec[1]);
-        vm.memory = stoi(str_vec[2]);
-        vm.is_dual = stoi(str_vec[3]);
+        VM vm(str_vec[0], stoi(str_vec[1]), stoi(str_vec[2]), stoi(str_vec[3]));
         vm_map.emplace(vm.type, vm);
     }
 }

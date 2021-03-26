@@ -1,30 +1,5 @@
 #include "ServerMgr.h"
 
-ServerAlloc::ServerAlloc(
-    std::string server_type,
-    int c_a_remain,
-    int c_b_remain,
-    int m_a_remain,
-    int m_b_remain,
-    int run_cost,
-    bool is_on) :
-    payload_count(0) {
-    this->server_type = server_type;
-    this->c_a_remain = c_a_remain;
-    this->c_b_remain = c_b_remain;
-    this->m_a_remain = m_a_remain;
-    this->m_b_remain = m_b_remain;
-    this->run_cost = run_cost;
-    this->is_on = is_on;
-};
-
-VMAlloc::VMAlloc(int vm_id, std::string vm_type, int alloc_serv, int node_type) {
-    this->vm_id = vm_id;
-    this->vm_type = vm_type;
-    this->alloc_serv = alloc_serv;
-    this->node_type = node_type;
-}
-
 
 ServerMgr::ServerMgr(DataInput& data_input, DataOutput& data_output) {
     this->data_input = &data_input;
@@ -40,6 +15,17 @@ ServerMgr::~ServerMgr() {
     data_output = nullptr;
 }
 
+void ServerMgr::backup(){
+    serv_purchase_list_temp = serv_purchase_list;
+    vm_alloc_map_temp = vm_alloc_map;
+}
+
+void ServerMgr::recover(){
+    serv_purchase_list = serv_purchase_list_temp;
+    vm_alloc_map = vm_alloc_map_temp;
+}
+
+
 /**
  * @brief
  * 使用最简单的请求处理策略
@@ -47,84 +33,59 @@ ServerMgr::~ServerMgr() {
  * @param request_list
  */
 void ServerMgr::processReq() {
-    // int count = 0;
     for (const auto day_req : data_input->request_list) {
-        data_output->purchase_list_temp = data_output->purchase_list;
-        data_output->alloc_list_temp = data_output->alloc_list;
-        serv_alloc_list_temp = serv_alloc_list;
-        vm_alloc_map_temp = vm_alloc_map;
-        data_output->day_cost_temp = data_output->day_cost;
-        data_output->total_cost_temp = data_output->total_cost;
+        // 以下对前一天的状态进行备份
+        backup();
+        data_output->backup();
         // 当天最小成本服务器
-        std::map<int, int> min_cost_server;
-        bool is_min_cost = false;
-        // 记录当天的购买信息
-        std::unordered_map<std::string, int> day_purchase;
-        // 记录当天的分配信息
-        std::vector<std::pair<int, std::string>> day_alloc;
-        for (int serv_index = 0; serv_index != data_input->server_num / 4; ++serv_index) {
+        std::pair<int, int> min_cost_server = {INT32_MAX, INT32_MAX};
+        for (int serv_index = 0; serv_index != data_input->server_num / 8 ; ++serv_index) {
             // 预存储当天的购买信息
-            data_output->purchase_list.push_back(day_purchase);
+            data_output->addNewDayPurchase();
             // 预存储当天的分配信息
-            data_output->alloc_list.push_back(day_alloc);
+            data_output->addNewDayAlloc();
             // 判断当前的服务器是否兼容
             bool is_suitable = true;
             // 预处理当天的请求
             for (const Request req : day_req) {
                 if (req.op == ADD) {
-                    if (!preAllocVM(req, is_min_cost)) {
-                        if (purchaseServer(req, serv_index, is_min_cost)) {
-                            postAllocVM(req, is_min_cost);
-                        }
-                        else {
+                    if (!preAllocVM(req)) {
+                        if (!purchaseServer(req, serv_index)){
                             is_suitable = false;
                             break;
                         }
                     }
                 }
                 else {
-                    delAllocVM(req, is_min_cost);
+                    delAllocVM(req);
                 }
             }
             if (is_suitable) {
-                min_cost_server.emplace(data_output->day_cost, serv_index);
+                if(min_cost_server.first > data_output->day_cost){
+                    min_cost_server.first = data_output->day_cost;
+                    min_cost_server.second = serv_index;
+                }
             }
-            data_output->purchase_list = data_output->purchase_list_temp;
-            data_output->alloc_list = data_output->alloc_list_temp;
-            serv_alloc_list = serv_alloc_list_temp;
-            vm_alloc_map = vm_alloc_map_temp;
-            data_output->day_cost = data_output->day_cost_temp;
-            data_output->total_cost = data_output->total_cost_temp;
-            
+            // 恢复备份
+            recover();
+            data_output->recover();
         }
-
-        data_output->purchase_list = data_output->purchase_list_temp;
-        data_output->alloc_list = data_output->alloc_list_temp;
-        serv_alloc_list = serv_alloc_list_temp;
-        vm_alloc_map = vm_alloc_map_temp;
-        data_output->day_cost = data_output->day_cost_temp;
-        data_output->total_cost = data_output->total_cost_temp;
-        // 存储当天的购买信息
-        data_output->purchase_list.push_back(day_purchase);
-        // 存储当天的分配信息
-        data_output->alloc_list.push_back(day_alloc);
-
+        // 存储当天的输出购买信息
+        data_output->addNewDayPurchase();
+        // 存储当天的输出分配信息
+        data_output->addNewDayAlloc();
         for (const Request req : day_req) {
             if (req.op == ADD) {
-                if (!preAllocVM(req, !is_min_cost)) {
-                    purchaseServer(req, min_cost_server.begin()->second, !is_min_cost);
-                    postAllocVM(req, !is_min_cost);
+                if (!preAllocVM(req)) {
+                    purchaseServer(req, min_cost_server.second);
                 }
             }
             else {
-                delAllocVM(req, is_min_cost);
+                delAllocVM(req);
             }
         }
-
-        // std::cout << data_output->day_cost << std::endl;
-        data_output->total_cost += data_output->day_cost; // 累计每天运行成本
+        data_output->energy_cost += data_output->day_cost; // 累计每天运行成本
         data_output->printDayOutput(); // 输出当天决策信息
-        // std::cout << "第" << ++count << std::endl;
     }
 }
 
@@ -132,110 +93,25 @@ void ServerMgr::processReq() {
  * @brief
  * 对当前请求进行预分配，返回是否预分配成功
  * @param req
- * @param vm
- * @param data_output
- * @return true
- * @return false
  */
-bool ServerMgr::preAllocVM(const Request& req, bool is_min_cost) {
-    int count = 0;
-    const VM& vm = data_input->vm_map.at(req.vm_type);
-    if (vm.is_dual) {
-        for (auto& serv_alloc : serv_alloc_list) {
-            if (serv_alloc.c_a_remain > vm.cpu / 2 &&
-                serv_alloc.c_b_remain > vm.cpu / 2 &&
-                serv_alloc.m_a_remain > vm.memory / 2 &&
-                serv_alloc.m_b_remain > vm.memory / 2) {
-                VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 0);
-                vm_alloc_map.emplace(req.vm_id, vm_alloc);
-                serv_alloc.c_a_remain -= vm.cpu / 2;
-                serv_alloc.c_b_remain -= vm.cpu / 2;
-                serv_alloc.m_a_remain -= vm.memory / 2;
-                serv_alloc.m_b_remain -= vm.memory / 2;
-                ++serv_alloc.payload_count;
-                if (!serv_alloc.is_on) {
-                    serv_alloc.is_on = true;
-                    data_output->day_cost += serv_alloc.run_cost;
-                }
-                // 记录分配信息
-                data_output->alloc_list.back().push_back(std::make_pair(count, ""));
-                return true;
+bool ServerMgr::preAllocVM(const Request& req) {
+    VM vm = data_input->vm_map.at(req.vm_type);
+    for(size_t i = 0; i != serv_purchase_list.size(); ++i){
+        Server& serv = serv_purchase_list[i];
+        if(serv.allocVM(req.vm_id, vm)){
+            // 记录分配信息
+            vm_alloc_map.emplace(req.vm_id, i);
+            if(!serv.is_on){
+                serv.is_on = true;
+                data_output->day_cost += serv.run_cost;
             }
-            ++count;
-        }
-    }
-    else {
-        for (auto& serv_alloc : serv_alloc_list) {
-            if (serv_alloc.c_a_remain > vm.cpu && serv_alloc.m_a_remain > vm.memory) {
-                VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 1);
-                vm_alloc_map.emplace(req.vm_id, vm_alloc);
-                serv_alloc.c_a_remain -= vm.cpu;
-                serv_alloc.m_a_remain -= vm.memory;
-                ++serv_alloc.payload_count;
-                if (!serv_alloc.is_on) {
-                    serv_alloc.is_on = true;
-                    data_output->day_cost += serv_alloc.run_cost;
-                }
-                // 记录分配信息
-                data_output->alloc_list.back().push_back(std::make_pair(count, "A"));
-                return true;
-            }
-            else if (serv_alloc.c_b_remain > vm.cpu && serv_alloc.m_b_remain > vm.memory) {
-                VMAlloc vm_alloc(req.vm_id, req.vm_type, count, 2);
-                vm_alloc_map.emplace(req.vm_id, vm_alloc);
-                serv_alloc.c_b_remain -= vm.cpu;
-                serv_alloc.m_b_remain -= vm.memory;
-                ++serv_alloc.payload_count;
-                if (!serv_alloc.is_on) {
-                    serv_alloc.is_on = true;
-                    data_output->day_cost += serv_alloc.run_cost;
-                }
-                // 记录分配信息
-                data_output->alloc_list.back().push_back(std::make_pair(count, "B"));
-                return true;
-            }
-            ++count;
+            // 记录用于输出的分配信息
+            data_output->alloc_list.back().push_back(std::make_pair(i, vm.node_type));
+            return true;
         }
     }
     return false;
 }
-
-/**
- * @brief
- * 最简易策略中，后分配过程是将无法容纳的虚拟机直接置于新购服务器之中
- * @param req
- * @param vm
- * @param data_output
- */
-void ServerMgr::postAllocVM(const Request& req, bool is_min_cost) {
-    ServerAlloc& serv_alloc = serv_alloc_list.back();
-    const VM& vm = data_input->vm_map.at(req.vm_type);
-    int node_type; // 节点信息
-    if (vm.is_dual) {
-        serv_alloc.c_a_remain -= vm.cpu / 2;
-        serv_alloc.c_b_remain -= vm.cpu / 2;
-        serv_alloc.m_a_remain -= vm.memory / 2;
-        serv_alloc.m_b_remain -= vm.memory / 2;
-        node_type = 0;
-        // 记录分配信息
-        data_output->alloc_list.back().push_back(std::make_pair(serv_alloc_list.size() - 1, ""));
-    }
-    else {
-        serv_alloc.c_a_remain -= vm.cpu;
-        serv_alloc.m_a_remain -= vm.memory;
-        node_type = 1;
-        // 记录分配信息
-        data_output->alloc_list.back().push_back(std::make_pair(serv_alloc_list.size() - 1, "A"));
-    }
-    ++serv_alloc.payload_count;
-    // 新购服务器开机，增加运行成本
-    serv_alloc.is_on = true;
-    data_output->day_cost += serv_alloc.run_cost;
-    // 记录虚拟机配置信息
-    VMAlloc vm_alloc(req.vm_id, req.vm_type, serv_alloc_list.size() - 1, node_type);
-    vm_alloc_map.emplace(req.vm_id, vm_alloc);
-}
-
 
 /**
  * @brief
@@ -244,31 +120,15 @@ void ServerMgr::postAllocVM(const Request& req, bool is_min_cost) {
  * @param vm
  * @param data_output
  */
-void ServerMgr::delAllocVM(const Request& req, bool is_min_cost) {
-    const VMAlloc& vm_alloc = vm_alloc_map.at(req.vm_id);
-    const VM& vm = data_input->vm_map.at(vm_alloc.vm_type);
-    ServerAlloc& serv_alloc = serv_alloc_list[vm_alloc.alloc_serv];
-    switch (vm_alloc.node_type) {
-    case 0:
-        serv_alloc.c_a_remain += vm.cpu / 2;
-        serv_alloc.c_b_remain += vm.cpu / 2;
-        serv_alloc.m_a_remain += vm.memory / 2;
-        serv_alloc.m_b_remain += vm.memory / 2;
-        break;
-    case 1:
-        serv_alloc.c_a_remain += vm.cpu;
-        serv_alloc.m_a_remain += vm.memory;
-        break;
-    default:
-        serv_alloc.c_b_remain += vm.cpu;
-        serv_alloc.m_b_remain += vm.memory;
-        break;
-    }
+void ServerMgr::delAllocVM(const Request& req) {
+    Server& serv = serv_purchase_list.at(vm_alloc_map.at(req.vm_id));
+    serv.delVM(req.vm_id);
     // 若无虚拟机则关机，日运行成本降低
-    if (--serv_alloc.payload_count == 0) {
-        serv_alloc.is_on = false;
-        data_output->day_cost -= serv_alloc.run_cost;
+    if (serv.vm_map.empty()) {
+        serv.is_on = false;
+        data_output->day_cost -= serv.run_cost;
     }
+    // 删除相关分配信息
     vm_alloc_map.erase(req.vm_id);
 }
 
@@ -278,42 +138,33 @@ void ServerMgr::migAllocVM() {
 }
 
 /**
- * @brief
- * 薛定谔算法
- * @param data_input
- * @param data_output
+ * @brief 
+ * 购买服务器，没啥策略，买就完事儿了
+ * @param req 
+ * @param serv_index 
+ * @return true 
+ * @return false 
  */
-bool ServerMgr::purchaseServer(const Request& req, int serv_index, bool is_min_cost) {
-    Server serv;
-    const VM& vm = data_input->vm_map.at(req.vm_type);
-    // srand(unsigned(time(0)));
-    // int count = 0;
-    // while(true){
-        // ++count;
-    serv = data_input->server_map.at(data_input->server_list.at(serv_index));
-    if (vm.is_dual) {
-        if (serv.cpu_a > vm.cpu / 2 && serv.memory_a > vm.memory / 2) {
-            ServerAlloc serv_alloc(serv.type, serv.cpu_a, serv.cpu_b, serv.memory_a, serv.memory_b, serv.run_cost, false);
-            serv_alloc_list.push_back(serv_alloc);
-            data_output->total_cost += serv.purchase_cost; // 成本增加
-            ++data_output->purchase_list.back()[serv.type]; // 对当天购买的特定服务器进行计数
-            return true;
-        }
+bool ServerMgr::purchaseServer(const Request& req, int serv_index) {
+    Server serv = data_input->server_map.at(data_input->server_list.at(serv_index));
+    VM vm = data_input->vm_map.at(req.vm_type);
+    if(serv.allocVM(req.vm_id, vm)){
+        // 默认新购服务器直接开机，运行成本增加
+        serv.is_on = true;
+        data_output->day_cost += serv.run_cost;
+        // 记录虚拟机配置信息
+        int purchase_index = serv_purchase_list.size();
+        vm_alloc_map.emplace(req.vm_id, purchase_index);
+        // 记录输出分配信息
+        data_output->alloc_list.back().push_back(std::make_pair(purchase_index, vm.node_type));
+        serv.bePurchased(purchase_index); // 确认该服务器被购买
+        serv_purchase_list.push_back(serv); // 加入已购列表
+        data_output->hardware_cost += serv.purchase_cost; // 硬件成本增加
+        ++data_output->purchase_list.back()[serv.type]; // 对当天购买的特定服务器进行计数
+        return true;
+    }else{
+        return false;
     }
-    else {
-        if (serv.cpu_a > vm.cpu && serv.memory_a > vm.memory) {
-            ServerAlloc serv_alloc(serv.type, serv.cpu_a, serv.cpu_b, serv.memory_a, serv.memory_b, serv.run_cost, false);
-            serv_alloc_list.push_back(serv_alloc);
-            data_output->total_cost += serv.purchase_cost; // 成本增加
-            ++data_output->purchase_list.back()[serv.type]; // 对当天购买的特定服务器进行计数
-            return true;
-        }
-    }
-    return false;
-
-    // }
-    // std::cout << count << std::endl; 
-    
 }
 
 

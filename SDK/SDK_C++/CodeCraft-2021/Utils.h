@@ -8,7 +8,7 @@
 #include <iostream>
 #include <map>
 
-// #define TEST
+#define TEST
 // #define VSDEBUG
 // #define LOG
 
@@ -28,7 +28,21 @@ enum Operation{
 
 std::vector<std::string> split(std::string str_line);
 
+struct VM{
+    // 以下为输入时得到的信息
+    std::string type;
+    int cpu;
+    int memory;
+    int is_dual;
+    // 以下为分配后产生的信息
+    int node_type; // 0：双节点 1：a节点 2：b节点
+
+    VM(std::string type, int cpu, int memory, int is_dual); // 构造函数
+    void beAlloc(int node_type);
+};
+
 struct Server{
+    // 以下为输入时得到的信息
     std::string type;
     int cpu_a;
     int cpu_b;
@@ -36,17 +50,22 @@ struct Server{
     int memory_b;
     int purchase_cost;
     int run_cost;
-#ifdef LOG
-    std::string toString();
-#endif
+
+    // 以下为被预购买产生的信息
+    int purchase_index;
+    int c_a_remain;
+    int c_b_remain;
+    int m_a_remain;
+    int m_b_remain;
+    bool is_on;
+    std::unordered_map<int, VM> vm_map;
+
+    Server(std::string type, int cpu_a, int memory_a, int purchase_cost, int run_cost); // 构造函数
+    void bePurchased(int purchase_index);
+    bool allocVM(int vm_id, VM& vm);
+    void delVM(int vm_id);
 };
 
-struct VM{
-    std::string type;
-    int cpu;
-    int memory;
-    int is_dual;
-};
 
 struct Request{
     Operation op;
