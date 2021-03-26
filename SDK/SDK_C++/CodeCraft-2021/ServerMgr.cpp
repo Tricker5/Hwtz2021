@@ -62,7 +62,7 @@ void ServerMgr::processReq() {
         std::unordered_map<std::string, int> day_purchase;
         // 记录当天的分配信息
         std::vector<std::pair<int, std::string>> day_alloc;
-        for (int serv_index = 0; serv_index != data_input->server_num; ++serv_index) {
+        for (int serv_index = 0; serv_index != data_input->server_num / 4; ++serv_index) {
             // 预存储当天的购买信息
             data_output->purchase_list.push_back(day_purchase);
             // 预存储当天的分配信息
@@ -86,15 +86,16 @@ void ServerMgr::processReq() {
                     delAllocVM(req, is_min_cost);
                 }
             }
+            if (is_suitable) {
+                min_cost_server.emplace(data_output->day_cost, serv_index);
+            }
             data_output->purchase_list = data_output->purchase_list_temp;
             data_output->alloc_list = data_output->alloc_list_temp;
             serv_alloc_list = serv_alloc_list_temp;
             vm_alloc_map = vm_alloc_map_temp;
             data_output->day_cost = data_output->day_cost_temp;
             data_output->total_cost = data_output->total_cost_temp;
-            if (is_suitable) {
-                min_cost_server.emplace(data_output->day_cost, serv_index);
-            }
+            
         }
 
         data_output->purchase_list = data_output->purchase_list_temp;

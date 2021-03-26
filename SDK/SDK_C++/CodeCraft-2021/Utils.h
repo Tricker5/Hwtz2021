@@ -8,7 +8,7 @@
 #include <iostream>
 #include <map>
 
-#define TEST
+// #define TEST
 // #define VSDEBUG
 // #define LOG
 
