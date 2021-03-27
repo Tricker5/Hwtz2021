@@ -34,12 +34,13 @@ void ServerMgr::recover(){
  */
 void ServerMgr::processReq() {
     for (const auto day_req : data_input->request_list) {
+        migAllocVM();
         // 以下对前一天的状态进行备份
         backup();
         data_output->backup();
         // 当天最小成本服务器
         std::pair<int, int> min_cost_server = {INT32_MAX, INT32_MAX};
-        for (int serv_index = 0; serv_index != data_input->server_num / 8 ; ++serv_index) {
+        for (int serv_index = 0; serv_index != data_input->server_num / 15 ; ++serv_index) {
             // 预存储当天的购买信息
             data_output->addNewDayPurchase();
             // 预存储当天的分配信息
@@ -132,9 +133,46 @@ void ServerMgr::delAllocVM(const Request& req) {
     vm_alloc_map.erase(req.vm_id);
 }
 
-// 暂定
+/**
+ * @brief
+ * 简单地随便迁移
+ */
 void ServerMgr::migAllocVM() {
-
+    data_output->addNewDayMigration();
+    // 从后往前找卖家
+    for (int i = serv_purchase_list.size() - 1; i != -1; --i) {
+        Server& serv_out = serv_purchase_list[i];
+        // 简单地以负荷为标准
+        if (!serv_out.vm_map.empty() && serv_out.vm_map.bucket_count() < 10) {
+            // 记录卖家的出货记录
+            std::vector<int> id_list;
+            for (auto item : serv_out.vm_map) {
+                // 从前往后找下家
+                for (int j = 0; j != i; ++j) {
+                    Server& serv_in = serv_purchase_list[j];
+                    // 只迁开机的，只坑老实人
+                    if (serv_in.is_on && serv_in.allocVM(item.first, item.second)) {
+                        // 更改存储的分配信息
+                        vm_alloc_map.at(item.first) = j;
+                        // 记录输出的迁移信息
+                        std::vector<int> mig_info = { item.first, j, item.second.node_type };
+                        data_output->migration_list.back().push_back(mig_info);
+                        id_list.push_back(item.first);
+                        break;
+                    }
+                }
+            }
+            // 卖家清除相关信息
+            for (int vm_id : id_list) {
+                serv_out.delVM(vm_id);
+            }
+            // 若无虚拟机则关机，日运行成本降低
+            if (serv_out.vm_map.empty()) {
+                serv_out.is_on = false;
+                data_output->day_cost -= serv_out.run_cost;
+            }
+        }
+    }
 }
 
 /**

@@ -19,11 +19,10 @@ struct ServerMgr{
         ServerMgr(DataInput& data_input, DataOutput& data_output);
         ~ServerMgr();
         void processReq();
+        void migAllocVM();
         bool purchaseServer(const Request& req, int serv_index);
         bool preAllocVM(const Request& req);
-        void postAllocVM(const Request& req);
         void delAllocVM(const Request& req);
-        void migAllocVM();
         void backup();
         void recover();
 };

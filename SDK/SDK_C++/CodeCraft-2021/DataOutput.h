@@ -26,11 +26,14 @@ struct DataOutput{
         // N-1天的购买列表
         std::vector<std::unordered_map<std::string, int>> purchase_list_temp;
         std::vector<std::vector<std::pair<int, int>>> alloc_list_temp;
+        // N天的迁移信息
+        std::vector<std::vector<std::vector<int>>> migration_list;
         
         DataOutput();
         ~DataOutput();
         void addNewDayPurchase();
         void addNewDayAlloc();
+        void addNewDayMigration();
         void backup();
         void recover();
         void printDayOutput();

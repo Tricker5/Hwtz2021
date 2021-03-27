@@ -9,8 +9,14 @@ DataOutput::DataOutput(){
 #endif
 #endif
     day_cost = 0;
+    energy_cost = 0;
+    hardware_cost = 0;
     total_cost = 0;
     day_migration = 0;
+    energy_cost_temp = 0;
+    hardware_cost_temp = 0;
+    day_cost_temp = 0;
+    total_cost_temp = 0;
 }
 
 DataOutput::~DataOutput(){
@@ -32,6 +38,12 @@ void DataOutput::addNewDayAlloc(){
     std::vector<std::pair<int, int>> day_alloc;
     alloc_list.push_back(day_alloc);
 }
+
+void DataOutput::addNewDayMigration() {
+    std::vector<std::vector<int>> day_migration;
+    migration_list.push_back(day_migration);
+}
+
 
 void DataOutput::backup(){
     purchase_list_temp = purchase_list;
@@ -79,16 +91,25 @@ void DataOutput::printDayPurchaseInfo(){
     }
 }
 
-void DataOutput::printDayMigNum(){
+void DataOutput::printDayMigNum() {
 #ifdef VSDEBUG
     output_f
 #else
-    std::cout 
+    std::cout
 #endif
-        << "(migration, 0)" << std::endl;
+        << "(migration, " << migration_list.back().size() << ")" << std::endl;
 }
 
-void DataOutput::printDayMigInfo(){
+void DataOutput::printDayMigInfo() {
+    std::string node_type_list[] = {"", ", A", ", B"};
+    for (auto item : migration_list.back()) {
+#ifdef VSDEBUG
+        output_f
+#else
+        std::cout
+#endif
+            << "(" << item[0] << ", " << item[1] << node_type_list[item[2]] << ")" << std::endl;
+    }
 
 }
 
